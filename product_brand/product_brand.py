@@ -25,6 +25,7 @@ from openerp import models, fields, api
 from openerp import http
 from openerp.http import request
 import logging
+from openerp.addons.website.models.website import slug
 
 PPG = 20 # Products Per Page
 PPR = 4  # Products Per Row
