@@ -19,11 +19,10 @@
 #
 ##############################################################################
 
-from openerp import tools
-from openerp.osv import osv, fields, expression
-from openerp.tools.translate import _
+from openerp.osv import osv, fields
 from openerp import SUPERUSER_ID
 import logging
+
 
 class product_product(osv.osv):
     _inherit = "product.product"
@@ -37,19 +36,22 @@ class product_product(osv.osv):
             return []
 
         def _name_get(d):
-            name = d.get('name','')
-            code = context.get('display_default_code', True) and d.get('default_code',False) or False
+            name = d.get('name', '')
+            code = context.get('display_default_code', True) and d.get(
+                'default_code', False) or False
             brand = d.get('product_brand_id') or ''
             if code and brand:
-                #name = '[%s] %s' % (code,name)
-                name = '%s: [%s] %s' % (brand,code,name)
+                # name = '[%s] %s' % (code,name)
+                name = '%s: [%s] %s' % (brand, code, name)
             if not brand and code:
-                name = '[%s] %s' % (code,name)
+                name = '[%s] %s' % (code, name)
             return (d['id'], name)
 
         partner_id = context.get('partner_id', False)
         if partner_id:
-            partner_ids = [partner_id, self.pool['res.partner'].browse(cr, user, partner_id, context=context).commercial_partner_id.id]
+            partner_ids = [partner_id, self.pool['res.partner'].browse(
+                cr, user, partner_id,
+                context=context).commercial_partner_id.id]
         else:
             partner_ids = []
 
@@ -71,25 +73,21 @@ class product_product(osv.osv):
                         variant and "%s (%s)" % (s.product_name, variant) or s.product_name
                         ) or False
                     mydict = {
-                              'id': product.id,
-                              'name': seller_variant or name,
-                              'default_code': s.product_code or product.default_code,
-                              'product_brand_id': product.product_brand_id and product.product_brand_id.name or False,
-                              }
+                        'id': product.id,
+                        'name': seller_variant or name,
+                        'default_code': s.product_code or product.default_code,
+                        'product_brand_id': product.product_brand_id and product.product_brand_id.name or False,
+                    }
                     result.append(_name_get(mydict))
             else:
                 mydict = {
-                          'id': product.id,
-                          'name': name,
-                          'default_code': product.default_code,
-                          'product_brand_id': product.product_brand_id and product.product_brand_id.name or False,
-                          }
+                    'id': product.id,
+                    'name': name,
+                    'default_code': product.default_code,
+                    'product_brand_id': product.product_brand_id and product.product_brand_id.name or False,
+                }
                 result.append(_name_get(mydict))
-        logging.info('result of product nameget%s',result)
+        logging.info('result of product nameget%s', result)
         return result
 
-
-
-
-    
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

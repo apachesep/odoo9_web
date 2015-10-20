@@ -25,7 +25,7 @@
     'category': 'Product',
     'summary': 'Add Brand Name to Products',
     'author': 'BrowseInfo',
-    'website' : 'www.browseinfo.in',
+    'website': 'www.browseinfo.in',
     'depends': ['product_brand'],
     'data': [
     ],

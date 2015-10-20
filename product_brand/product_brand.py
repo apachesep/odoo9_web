@@ -27,8 +27,9 @@ from openerp.http import request
 import logging
 from openerp.addons.website.models.website import slug
 
-PPG = 20 # Products Per Page
-PPR = 4  # Products Per Row
+PPG = 20  # Products Per Page
+PPR = 4   # Products Per Row
+
 
 class QueryURL(object):
     def __init__(self, path='', **args):
@@ -38,28 +39,31 @@ class QueryURL(object):
     def __call__(self, path=None, **kw):
         if not path:
             path = self.path
-        for k,v in self.args.items():
-            kw.setdefault(k,v)
+        for k, v in self.args.items():
+            kw.setdefault(k, v)
         l = []
-        for k,v in kw.items():
+        for k, v in kw.items():
             if v:
                 if isinstance(v, list) or isinstance(v, set):
-                    l.append(werkzeug.url_encode([(k,i) for i in v]))
+                    l.append(werkzeug.url_encode([(k, i) for i in v]))
                 else:
-                    l.append(werkzeug.url_encode([(k,v)]))
+                    l.append(werkzeug.url_encode([(k, v)]))
         if l:
             path += '?' + '&'.join(l)
         return path
-    
+
+
 def get_pricelist():
     cr, uid, context, pool = request.cr, request.uid, request.context, request.registry
     sale_order = context.get('sale_order')
     if sale_order:
         pricelist = sale_order.pricelist_id
     else:
-        partner = pool['res.users'].browse(cr, SUPERUSER_ID, uid, context=context).partner_id
+        partner = pool['res.users'].browse(
+            cr, SUPERUSER_ID, uid, context=context).partner_id
         pricelist = partner.property_product_pricelist
     return pricelist
+
 
 class table_compute(object):
     def __init__(self):
@@ -69,7 +73,7 @@ class table_compute(object):
         res = True
         for y in range(sizey):
             for x in range(sizex):
-                if posx+x>=PPR:
+                if posx+x >= PPR:
                     res = False
                     break
                 row = self.table.setdefault(posy+y, {})
@@ -88,11 +92,11 @@ class table_compute(object):
         for p in products:
             x = min(max(p.website_size_x, 1), PPR)
             y = min(max(p.website_size_y, 1), PPR)
-            if index>=PPG:
+            if index >= PPG:
                 x = y = 1
 
             pos = minpos
-            while not self._check_place(pos%PPR, pos/PPR, x, y):
+            while not self._check_place(pos % PPR, pos/PPR, x, y):
                 pos += 1
             # if 21st products (index 20) and the last line is full (PPR products in it), break
             # (pos + 1.0) / PPR is the line where the product would be inserted
@@ -102,18 +106,19 @@ class table_compute(object):
             if index >= PPG and ((pos + 1.0) / PPR) > maxy:
                 break
 
-            if x==1 and y==1:   # simple heuristic for CPU optimization
+            if x == 1 and y == 1:   # simple heuristic for CPU optimization
                 minpos = pos/PPR
 
             for y2 in range(y):
                 for x2 in range(x):
-                    self.table[(pos/PPR)+y2][(pos%PPR)+x2] = False
-            self.table[pos/PPR][pos%PPR] = {
-                'product': p, 'x':x, 'y': y,
-                'class': " ".join(map(lambda x: x.html_class or '', p.website_style_ids))
+                    self.table[(pos/PPR)+y2][(pos % PPR)+x2] = False
+            self.table[pos/PPR][pos % PPR] = {
+                'product': p, 'x': x, 'y': y,
+                'class': " ".join(map(lambda x: x.html_class or '',
+                                      p.website_style_ids))
             }
-            if index<=PPG:
-                maxy=max(maxy,y+(pos/PPR))
+            if index <= PPG:
+                maxy = max(maxy, y+(pos/PPR))
             index += 1
 
         # Format table according to HTML needs
@@ -125,33 +130,40 @@ class table_compute(object):
             cols.sort()
             x += len(cols)
             rows[col] = [c for c in map(lambda x: x[1], cols) if c != False]
-
         return rows
-    
+
+
 class website_sale(http.Controller):
-    
+
     def get_pricelist(self):
         return get_pricelist()
-    
-    @http.route(['/shop',
-        '/shop/page/<int:page>',
+
+    @http.route([
+        '/shop', '/shop/page/<int:page>',
         '/shop/category/<model("product.public.category"):category>',
         '/shop/category/<model("product.public.category"):category>/page/<int:page>'
-    ], type='http', auth="public", website=True)
+        ], type='http', auth="public", website=True)
     def shop(self, page=0, category=None, search='', **post):
         cr, uid, context, pool = request.cr, request.uid, request.context, request.registry
         domain = request.website.sale_product_domain()
-        for i in ["!","@","#","$","-","%","&","*","(",")","_","'",";",":",",",".","?","/","="]:
-            search = search.replace(i," ")
+        for i in ["!", "@", "#", "$", "-", "%", "&",
+                  "*", "(", ")", "_", "'", ";", ":",
+                  ",", ".", "?", "/", "="]:
+            search = search.replace(i, "")
         if search:
             for srch in search.split(" "):
-                domain += ['|','|','|', '|', '|', ('name', 'ilike', srch),('product_brand_id', 'ilike', srch),('default_code', 'ilike', srch), ('description', 'ilike', srch),
-                    ('description_sale', 'ilike', srch), ('product_variant_ids.default_code', 'ilike', srch)]
+                domain += ['|', '|', '|', '|', '|',
+                           ('name', 'ilike', srch),
+                           ('product_brand_id', 'ilike', srch),
+                           ('default_code', 'ilike', srch),
+                           ('description', 'ilike', srch),
+                           ('description_sale', 'ilike', srch),
+                           ('product_variant_ids.default_code', 'ilike', srch)]
         if category:
             domain += [('public_categ_ids', 'child_of', int(category))]
         attrib_list = request.httprequest.args.getlist('attrib')
-        logging.info('\n \n attrib_list====%s',attrib_list)
-        attrib_values = [map(int,v.split("-")) for v in attrib_list if v]
+        logging.info('\n \n attrib_list====%s', attrib_list)
+        attrib_values = [map(int, v.split("-")) for v in attrib_list if v]
         attrib_set = set([v[1] for v in attrib_values])
 
         if attrib_values:
@@ -170,27 +182,36 @@ class website_sale(http.Controller):
             if attrib:
                 domain += [('attribute_line_ids.value_ids', 'in', ids)]
 
-        keep = QueryURL('/shop', category=category and int(category), search=search, attrib=attrib_list)
+        keep = QueryURL('/shop', category=category and int(category),
+                        search=search, attrib=attrib_list)
 
         if not context.get('pricelist'):
             pricelist = self.get_pricelist()
             context['pricelist'] = int(pricelist)
         else:
-            pricelist = pool.get('product.pricelist').browse(cr, uid, context['pricelist'], context)
+            pricelist = pool.get('product.pricelist').browse(
+                cr, uid, context['pricelist'], context)
 
         product_obj = pool.get('product.template')
 
         url = "/shop"
-        product_count = product_obj.search_count(cr, uid, domain, context=context)
+        product_count = product_obj.search_count(
+            cr, uid, domain, context=context)
         if search:
             post["search"] = search
         if category:
-            category = pool['product.public.category'].browse(cr, uid, int(category), context=context)
+            category = pool['product.public.category'].browse(
+                cr, uid, int(category), context=context)
             url = "/shop/category/%s" % slug(category)
         if attrib_list:
             post['attrib'] = attrib_list
-        pager = request.website.pager(url=url, total=product_count, page=page, step=PPG, scope=7, url_args=post)
-        product_ids = product_obj.search(cr, uid, domain, limit=PPG, offset=pager['offset'], order='website_published desc, website_sequence desc', context=context)
+        pager = request.website.pager(
+            url=url, total=product_count, page=page,
+            step=PPG, scope=7, url_args=post)
+        product_ids = product_obj.search(
+            cr, uid, domain, limit=PPG, offset=pager['offset'],
+            order='website_published desc, website_sequence desc',
+            context=context)
         products = product_obj.browse(cr, uid, product_ids, context=context)
 
         style_obj = pool['product.style']
@@ -198,19 +219,24 @@ class website_sale(http.Controller):
         styles = style_obj.browse(cr, uid, style_ids, context=context)
 
         category_obj = pool['product.public.category']
-        category_ids = category_obj.search(cr, uid, [('parent_id', '=', False)], context=context)
-        categs = category_obj.browse(cr, uid, category_ids, context=context)
+        category_ids = category_obj.search(
+            cr, uid, [('parent_id', '=', False)], context=context)
+        categs = category_obj.browse(
+            cr, uid, category_ids, context=context)
 
         attributes_obj = request.registry['product.attribute']
-        attributes_ids = attributes_obj.search(cr, uid, [], context=context)
-        attributes = attributes_obj.browse(cr, uid, attributes_ids, context=context)
+        attributes_ids = attributes_obj.search(
+            cr, uid, [], context=context)
+        attributes = attributes_obj.browse(
+            cr, uid, attributes_ids, context=context)
 
         from_currency = products and products[0].currency_id or False
         to_currency = pricelist.currency_id
-        logging.info('\n \n products====%s',products)
-        compute_currency = lambda price: pool['res.currency']._compute(cr, uid, from_currency, to_currency, price, context=context)
-        logging.info('\n \n from_currency==%s',from_currency)
-        logging.info('\n \n ,to_currency==%s',to_currency)
+        logging.info('\n \n products====%s', products)
+        compute_currency = lambda price: pool['res.currency']._compute(
+            cr, uid, from_currency, to_currency, price, context=context)
+        logging.info('\n \n from_currency==%s', from_currency)
+        logging.info('\n \n ,to_currency==%s', to_currency)
 
         values = {
             'search': search,
@@ -227,10 +253,13 @@ class website_sale(http.Controller):
             'attributes': attributes,
             'compute_currency': compute_currency,
             'keep': keep,
-            'style_in_product': lambda style, product: style.id in [s.id for s in product.website_style_ids],
-            'attrib_encode': lambda attribs: werkzeug.url_encode([('attrib',i) for i in attribs]),
+            'style_in_product': lambda style, product: style.id in [
+                s.id for s in product.website_style_ids],
+            'attrib_encode': lambda attribs: werkzeug.url_encode([
+                ('attrib', i) for i in attribs]),
         }
         return request.website.render("website_sale.products", values)
+
 
 class ProductBrand(models.Model):
     _name = 'product.brand'
@@ -268,3 +297,5 @@ class ProductTemplate(models.Model):
         string='Brand',
         help='Select a brand for this product'
     )
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 ##############################################################################
 #
 #    This module uses OpenERP, Open Source Management Solution Framework.
@@ -33,7 +33,7 @@ Create Brand Name in Product Variants.
         """,
     'author': 'BrowseInfo',
     'website': 'http://www.browseinfo.in',
-    'depends': ['base','website', 'sale', 'website_sale'],
+    'depends': ['base', 'website', 'sale', 'website_sale'],
     'data': [
         'views/templates.xml',
         'views/payment.xml',
@@ -44,6 +44,5 @@ Create Brand Name in Product Variants.
     'installable': True,
     'application': True,
 }
-
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

@@ -19,9 +19,6 @@
 #
 ##############################################################################
 
-
 from . import product_brand_name
-
-
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
