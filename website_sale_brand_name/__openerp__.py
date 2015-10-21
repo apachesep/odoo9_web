@@ -28,12 +28,13 @@
     'version': '1.0',
     'description': """
 Create Brand Name in Product Variants.
-==================
+======================================
 
         """,
     'author': 'BrowseInfo',
     'website': 'http://www.browseinfo.in',
-    'depends': ['base', 'website', 'sale', 'website_sale'],
+    'depends': ['base', 'website', 'sale',
+                'website_sale', 'product_brand_name'],
     'data': [
         'views/templates.xml',
         'views/payment.xml',
