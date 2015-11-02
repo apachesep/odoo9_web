@@ -26,7 +26,7 @@
     'summary': 'Add brand to products',
     'author': 'BrowseInfo',
     'website': 'www.browseinfo.in',
-    'depends': ['product'],
+    'depends': ['product', 'website_sale', ],
     'data': [
         'product_brand_view.xml',
         'security/ir.model.access.csv'
